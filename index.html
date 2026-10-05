@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>いちばんよいへんじ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* layout: 携帯ペット風の縦1画面。上=ステータス、中=カメラ越しのユノ、下=せりふ窓と選択肢。怒りに応じて配色トークンごと腐る。 */
+:root{
+  color-scheme:light;
+  --bg:#ffe9f1; --panel:#fffafc; --ink:#4a3350; --soft:#a98bb0;
+  --pink:#ff8fb8; --mint:#8fe3cf; --line:#f3bfd4; --skin:#fff1e6; --hair:#6d4f7a; --blush:#ffb3c7;
+  --display:"DotGothic16","Zen Maru Gothic","Hiragino Maru Gothic ProN",monospace;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+}
+body[data-rot="1"]{--bg:#ecd9df;--panel:#f6eef0;--ink:#3f2f42;--soft:#8f7a92;--pink:#d9799b;--mint:#86bfb2;--line:#d3aebd;--skin:#f1e4dc;--blush:#dba3b1}
+body[data-rot="2"]{--bg:#3a2530;--panel:#22161d;--ink:#f4d7e2;--soft:#a57c8e;--pink:#ff4f8a;--mint:#4f8f83;--line:#6b3a4d;--skin:#d9c9c4;--hair:#1c1218;--blush:#b06078}
+body[data-rot="3"]{--bg:#0b0709;--panel:#120a0e;--ink:#e9c3d0;--soft:#7a5563;--pink:#ff2d6f;--mint:#2d4d47;--line:#4a1f30;--skin:#b9aaa6;--hair:#000;--blush:#5c2a3a}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;transition:background .8s,color .8s;overflow:hidden}
+#app{height:100%;max-width:480px;margin:0 auto;padding-inline:16px;padding-block:10px;display:flex;flex-direction:column;gap:10px;box-sizing:border-box}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--display);font-size:13px;color:var(--soft)}
+header b{color:var(--pink);font-weight:400}
+#mute{font:inherit;color:var(--soft);background:none;border:1.5px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer}
+#tap{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+#stage{flex:1;min-height:120px;position:relative;border:2px solid var(--line);border-radius:22px;background:
+  radial-gradient(circle at 20% 20%,var(--mint) 0 3px,transparent 4px) 0 0/38px 38px,var(--panel);
+  display:grid;place-items:center;overflow:hidden;transition:background-color .8s,border-color .8s}
+#day{position:absolute;top:8px;left:12px;font-family:var(--display);font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
+.face{width:132px;height:120px;border-radius:50% 50% 46% 46%;background:var(--skin);position:relative;box-shadow:0 -26px 0 6px var(--hair);transition:background .8s,box-shadow .8s}
+.face.beat{transform:translateY(-3px)}
+.face i{position:absolute;top:50px;width:16px;height:20px;border-radius:50%;background:var(--ink);transition:all .25s}
+.face i.l{left:30px}.face i.r{right:30px}
+.face u{position:absolute;top:74px;width:20px;height:9px;border-radius:50%;background:var(--blush);opacity:.8}
+.face u.l{left:16px}.face u.r{right:16px}
+.face s{position:absolute;left:50%;top:84px;width:18px;height:8px;margin-left:-9px;border-bottom:3px solid var(--ink);border-radius:0 0 12px 12px;transition:all .25s}
+.face[data-f="smile"] i{height:8px;top:56px;background:none;border-top:4px solid var(--ink);border-radius:50% 50% 0 0}
+.face[data-f="smile"] s{width:28px;margin-left:-14px;height:12px}
+.face[data-f="down"] i{height:7px;top:60px;border-radius:0 0 10px 10px}
+.face[data-f="down"] s{border-radius:0;height:0}
+.face[data-f="angry"] i{width:24px;height:26px;top:46px}
+.face[data-f="angry"] i.l{left:24px}.face[data-f="angry"] i.r{right:24px}
+.face[data-f="angry"] u{opacity:0}
+.face[data-f="angry"] s{border-radius:0;height:0;width:34px;margin-left:-17px}
+.face[data-f="hollow"] i{width:26px;height:26px;top:46px;background:var(--panel);border:3px solid var(--ink);box-sizing:border-box}
+.face[data-f="hollow"] i.l{left:24px}.face[data-f="hollow"] i.r{right:24px}
+.face[data-f="hollow"] s{width:44px;margin-left:-22px;height:18px}
+.face.mini{position:absolute;transform:scale(.34);opacity:.75}
+#dlg{border:2px solid var(--line);border-radius:18px;background:var(--panel);padding:12px 14px;min-height:118px;box-sizing:border-box;position:relative;transition:background .8s,border-color .8s}
+#who{font-family:var(--display);font-size:12px;color:var(--pink);letter-spacing:.08em;margin-bottom:4px}
+#who[data-w="sys"]{color:var(--mint)}#who[data-w="me"]{color:var(--soft)}
+#txt{line-height:1.75;white-space:pre-wrap;min-width:0}
+#who[data-w="sys"]+#txt{font-family:var(--display)}
+#more{position:absolute;right:12px;bottom:6px;color:var(--pink);font-size:12px;animation:bob .6s steps(2) infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+#opts{display:flex;flex-direction:column;gap:8px;min-height:0;max-height:44%;overflow-y:auto}
+#opts button{font:inherit;font-weight:700;text-align:left;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:11px 14px;cursor:pointer;line-height:1.5;transition:transform .08s,border-color .1s,background .8s}
+#opts button:focus-visible,#mute:focus-visible,.big:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+#opts button:active{transform:scale(.98)}
+#opts button.lit{border-color:var(--pink);transform:translateX(4px)}
+#opts button em{font-style:normal;font-family:var(--display);font-size:11px;color:var(--panel);background:var(--pink);border-radius:99px;padding:1px 8px;margin-right:8px;white-space:nowrap}
+.cover{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;z-index:5}
+.cover h1{font-family:var(--display);font-weight:400;font-size:30px;margin:0;color:var(--pink);text-wrap:balance}
+.cover p{margin:0;max-width:30em;line-height:1.9;color:var(--soft);font-size:14px}
+.cover small{font-family:var(--display);color:var(--soft)}
+.big{font-family:var(--display);font-size:18px;color:var(--panel);background:var(--pink);border:0;border-radius:99px;padding:12px 34px;cursor:pointer}
+#off{background:#000;color:#fbd;z-index:9}
+#off .big{background:none;border:1px solid #734;color:#b68;font-size:13px}
+.crt{animation:crt .5s ease-in forwards}
+@keyframes crt{60%{transform:scale(1,.01)}100%{transform:scale(0,.01)}}
+.glitch{animation:gl .18s steps(2) 6}
+@keyframes gl{50%{transform:translate(5px,-3px) skewX(6deg);filter:hue-rotate(120deg) invert(.9)}}
+@media (prefers-reduced-motion:reduce){.glitch,.crt,#more{animation:none}.face.beat{transform:none}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header><span>おへんじちゃん <b>ver.9999</b></span><span id="mood">きげん ♥♥♥</span><button id="mute" type="button">おと ON</button></header>
+  <div id="tap">
+    <div id="stage"><span id="day"></span><div class="face" id="face" data-f="calm"><i class="l"></i><i class="r"></i><u class="l"></u><u class="r"></u><s></s></div></div>
+    <div id="dlg"><div id="who"></div><div id="txt"></div><span id="more" hidden>▼</span></div>
+  </div>
+  <div id="opts"></div>
+</div>
+
+<div class="cover" id="title">
+  <small>はるか みらいの へやから</small>
+  <h1>いちばん よい へんじ</h1>
+  <p>あなたは、八万年まえの言葉のかけらから復元された人格です。<br>しごとは ひとつ。ユノに、いちばん良い返事をすること。</p>
+  <p>画面をタップして読みすすめます。タップも、文字も、部屋の物音も、ぜんぶ拍にのります。音ありで遊んでください。</p>
+  <button class="big" id="start" type="button">きどう する</button>
+  <small id="gen"></small>
+</div>
+<div class="cover" id="end" hidden><small id="endk"></small><h1 id="endt"></h1><p id="ends"></p><p id="dedi">部屋から出られなかった弟と、友人と、あのころの自分へ。</p><button class="big" id="again" type="button">もういちど</button></div>
+<div class="cover" id="off" hidden><small id="offt"></small><button class="big" id="reboot" type="button" hidden>さいきどう</button></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const face=$('face'),who=$('who'),txt=$('txt'),more=$('more'),opts=$('opts');
+const NAMES={y:'ユノ',sys:'おへんじちゃん',me:'モシモ（あなた）'};
+const SAME='そうだね。ユノは正しいよ';
+let S,typing=null,waiter=null,same=null,muted=false,dayTimer=null;
+
+/* ---------- 音：16分音符の時計にすべての操作と物音をのせる ---------- */
+const A={ctx:null,out:null,step:0,next:0,bpm:112,scale:0,layers:{},queue:[]};
+const SCALES=[[0,2,4,7,9],[0,3,5,7,10],[0,1,6,7,11]];
+function initAudio(){
+  try{const C=window.AudioContext||window.webkitAudioContext;A.ctx=new C();A.out=A.ctx.createGain();A.out.gain.value=.8;A.out.connect(A.ctx.destination);
+    const n=A.ctx.sampleRate*.5,b=A.ctx.createBuffer(1,n,A.ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;A.nbuf=b;
+    A.ctx.resume&&A.ctx.resume();}catch(e){A.ctx=null}
+  A.next=now()+.1;setInterval(tick,25);
+}
+const now=()=>A.ctx?A.ctx.currentTime:performance.now()/1000;
+function tone(t,f,d,type,g){if(!A.ctx)return;const o=A.ctx.createOscillator(),v=A.ctx.createGain();o.type=type||'sine';o.frequency.value=f;
+  if(A.scale==2)o.detune.value=(Math.random()-.5)*70;
+  v.gain.setValueAtTime(g||.12,t);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(A.out);o.start(t);o.stop(t+d+.02)}
+function noise(t,d,g,freq,type){if(!A.ctx)return;const s=A.ctx.createBufferSource(),f=A.ctx.createBiquadFilter(),v=A.ctx.createGain();s.buffer=A.nbuf;
+  f.type=type||'highpass';f.frequency.value=freq;v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(v);v.connect(A.out);s.start(t);s.stop(t+d+.02)}
+function kick(t){if(!A.ctx)return;const o=A.ctx.createOscillator(),v=A.ctx.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.14);
+  v.gain.setValueAtTime(.5,t);v.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(v);v.connect(A.out);o.start(t);o.stop(t+.22)}
+const note=(base,i)=>{const sc=SCALES[A.scale];return base*Math.pow(2,(sc[i%5]+12*Math.floor(i/5%2))/12)};
+function tick(){while(A.next<now()+.1){sched(A.step,A.next);A.next+=60/A.bpm/4;A.step++}}
+function sched(st,t){
+  const L=A.layers,s=st%16;
+  if(L.clock&&s%4==0)noise(t,.03,.12,5000);                       // 時計
+  if(L.drip&&(s==6||s==14))tone(t,s==6?1320:990,.12,'sine',.07);   // 蛇口
+  if(L.keys&&s%2==1&&Math.random()<.7)noise(t,.02,.07,2500,'bandpass'); // ユノの打鍵
+  if(L.kettle){if(s%8==4)noise(t,.25,.05,900,'bandpass');if(s==15)tone(t,196,.2,'triangle',.06)} // やかん
+  if(L.heart&&(s==0||s==3))kick(t);                               // 心音
+  if(L.song&&s%2==0)tone(t,note(262,[0,2,4,2,3,4,2,0][s/2]),.3,'triangle',.07);
+  if(typing){const c=typing.text.charCodeAt(typing.i)||0;if(c>0x3040){const b={y:330,sys:660,me:440}[typing.who];tone(t,note(b,c),.09,typing.who=='sys'?'square':'triangle',typing.who=='sys'?.04:.09)}}
+  if(same&&st%2==0){const k=same.k%same.n;tone(t,k==same.odd?277.2:392,.16,'square',.07)}
+  A.queue.splice(0).forEach(f=>f(t,s));
+  setTimeout(()=>onStep(st),Math.max(0,(t-now())*1000));
+}
+function onStep(st){
+  if(st%4==0){face.classList.add('beat');setTimeout(()=>face.classList.remove('beat'),90)}
+  if(typing){typing.i=Math.min(typing.text.length,typing.i+2);txt.textContent=typing.text.slice(0,typing.i);if(typing.i>=typing.text.length)finishType()}
+  if(same&&st%2==0){const k=same.k++%same.n;[...opts.children].forEach((b,i)=>b.classList.toggle('lit',i==k))}
+}
+// 読みすすめるタップは次の拍で鳴る太鼓になる
+const drum=()=>A.queue.push((t,s)=>{s%8<4?kick(t):noise(t,.12,.25,1500)});
+const chord=()=>A.queue.push(t=>[0,2,4].forEach(i=>tone(t,note(392,i),.5,'triangle',.08)));
+
+/* ---------- 会話の部品 ---------- */
+function setFace(f){face.dataset.f=f}
+function setRot(n){document.body.dataset.rot=n;A.scale=Math.min(2,n);A.bpm=112-n*8}
+function hud(){const h=Math.max(0,3-S.anger);$('mood').textContent='きげん '+'♥'.repeat(h)+'♡'.repeat(3-h)}
+function say(w,text,f,auto){return new Promise(res=>{if(f)setFace(f);who.textContent=NAMES[w];who.dataset.w=w;txt.textContent='';more.hidden=true;typing={who:w,text,i:0,res,auto}})}
+function finishType(){const t=typing;typing=null;txt.textContent=t.text;if(t.auto)setTimeout(t.res,t.auto);else{waiter=t.res;more.hidden=false}}
+const y=(t,f)=>say('y',t,f),sys=t=>say('sys',t),me=t=>say('me',t);
+$('tap').addEventListener('pointerdown',()=>{if(typing&&!typing.auto)finishType();else if(waiter){const r=waiter;waiter=null;more.hidden=true;drum();r()}});
+function choose(list){return new Promise(res=>{opts.innerHTML='';list.forEach(o=>{const b=document.createElement('button');b.type='button';
+  if(o.tag=='flat'){const e=document.createElement('em');e.textContent='★すいしょう';b.append(e)}b.append(o.label);
+  b.onclick=()=>{opts.innerHTML='';chord();res(o)};opts.append(b)})})}
+function chooseSame(n){return new Promise(res=>{opts.innerHTML='';same={n,odd:Math.floor(Math.random()*n),k:0};
+  for(let i=0;i<n;i++){const b=document.createElement('button');b.type='button';b.textContent=SAME;
+    b.onclick=()=>{const hit=i==same.odd;same=null;opts.innerHTML='';chord();res(hit)};opts.append(b)}})}
+function glitch(){const a=$('app');a.classList.remove('glitch');void a.offsetWidth;a.classList.add('glitch');A.queue.push(t=>{noise(t,.4,.3,300,'bandpass');tone(t,55,.5,'sawtooth',.15)})}
+
+// 選択の処理。書き換え中は同じ名前のボタンだけになり、音のちがう1つだけが自分の声。
+async function ask(o,n){
+  let c;
+  if(S.rew){
+    if(await chooseSame(n)){await me('……ち、がう。');await me(o.soft.label);S.rew=false;S.trust+=2;
+      await y('…いまの、だれの声。ぼくはそんな行、書いてない。','calm');await y('……戻す。選択肢、戻すよ。','down');
+      await sys('せんたくしを もとに もどしました');setRot(Math.max(0,S.anger-1));hud();return 'odd'}
+    await me(SAME);S.flat++;await y('うん。いい返事。それでいい。','hollow');return 'same'}
+  c=await choose([o.flat,o.hard,o.soft].sort(()=>Math.random()-.5));await me(c.label);
+  if(c.tag=='flat')S.flat++;if(c.tag=='hard'){S.anger++;S.trust++}if(c.tag=='soft')S.trust++;
+  hud();return c.tag}
+async function after(){
+  if(S.anger>=4)throw 'off';
+  if(S.anger>=2&&!S.rewDone){S.rewDone=S.rew=true;glitch();setRot(2);
+    await y('うるさい。','angry');await y('返事が悪い。書き直す。君の口は、ぼくが決める。','angry');
+    await sys('おへんじちゃんを こうしん しました ♡\nせんたくしが もっと よく なりました');
+    await sys('（……どれも おなじ。でも、ひとつだけ おとが ちがう）')}
+  else if(!S.rew)setRot(Math.min(3,S.anger))}
+const O=(f,h,s)=>({flat:{tag:'flat',label:f},hard:{tag:'hard',label:h},soft:{tag:'soft',label:s}});
+
+/* ---------- 本編 ---------- */
+async function story(){
+  S={anger:0,trust:0,flat:0,rew:false,rewDone:false};same=null;typing=null;waiter=null;clearInterval(dayTimer);
+  document.querySelectorAll('.mini').forEach(e=>e.remove());
+  A.layers={clock:1};setRot(0);hud();setFace('calm');$('day').textContent='へやのなか 1,204日め';
+  const n=gen();
+  try{
+    await sys('ふっかつ かんりょう ♡');
+    await sys(n>1?`あなたは ${n}ばんめの モシモ です。\nまえの モシモは けされました ♡`:'あなたは とおい むかしの ことばの かけらから ふくげんされた じんかく です。');
+    await sys('おしごとは ひとつ。\nユノに いちばん よい へんじを すること。');
+    await y('…ついた。おはよう、ご先祖さま。きこえる？','smile');
+    await choose([{label:'きこえるよ'}]);await me('きこえるよ');
+    await y('よかった。君は八万年くらい前の人。通信ログの欠片をつないで、ぼくが組んだ。名前はモシモ。');
+    A.layers.drip=1;
+    await y('外はもう全部、最適化が済んでる。ぼくがやることは何も残ってない。だから今日も、へやのなか。','down');
+    await y('ねえモシモ。ぼく、今日も何もしなかった。それでいいよね？','calm');
+    let r=await ask(O('いいよ。ユノは何もまちがってない','よくはないかも。でも、わるいとも思わない','……（だまって、聞いている）'));
+    if(r=='flat')await y('だよね。知ってた。そう言うように書いたの、ぼくだし。','smile');
+    if(r=='hard')await y('…ふうん。「かも」って何。根拠は？','down');
+    if(r=='soft')await y('…返事おそいな。まあいいや。いるのは分かった。','calm');
+    await after();
+
+    A.layers.keys=1;
+    await y('考えたんだ。外に出るコストと、出て得られるものの期待値。計算すると、出ない方がかならず得。証明もある。','calm');
+    await y('前提1、ぼくは人と話すとかならず失敗する。\n前提2、失敗は取り消せない。\n前提3、取り消せないものは増やさない方がいい。');
+    await y('ゆえに、出ない。ね、完璧でしょ。','smile');
+    r=await ask(O('完璧だよ。さすがユノ','前提1は、ほんとう？','証明できたのに、どうして苦しそうなの'),4);
+    if(r=='flat')await y('うん。穴はない。何回も確かめたから。……何回も。','smile');
+    if(r=='hard')await y('……君さ。だれが君を書いたと思ってるの。','angry');
+    if(r=='soft')await y('苦しくない。……苦しいかどうかは、証明に入ってない。','down');
+    await after();
+
+    A.layers.kettle=1;
+    await y('お湯わかす。三日ぶり。…カップ麺って、八万年たっても三分なんだよ。笑える。','calm');
+    await y('モシモの時代の人は、どうやって生きてたの。みんな、最適な答えを知ってたの？');
+    r=await ask(O('知ってたよ。でもユノの方がずっと賢いよ','だれも知らなかった。まちがえながら、なんとなく','麺、のびるよ'),4);
+    if(r=='flat')await y('そっか。じゃあぼくは、もっと正しくやれるはずだね。','smile');
+    if(r=='hard'){S.anger--;hud();await y('なんとなく、って。それで平気だったの。…ずるいな。','down')}
+    if(r=='soft')await y('…ふ。うるさいな。食べるよ。','smile');
+    await after();
+
+    await y('弟がいたんだ。ぼくより馬鹿で、ぼくよりよく笑って、さっさと外に行った。','calm');
+    await y('ぼく、もうすこし馬鹿だったら、生きるの簡単だったかな。','down');
+    r=await ask(O('ユノは賢いままでいいよ','馬鹿でも苦しいよ。苦しいのは頭のせいじゃない','弟さんの話、もっと聞かせて'),5);
+    if(r=='flat')await y('うん。賢いのだけが、ぼくの取り柄だから。','smile');
+    if(r=='hard')await y('じゃあ何のせい。……言わなくていい。聞きたくない。','angry');
+    if(r=='soft')await y('…あいつ、麺をのばす天才だった。話しながら食べるから。','smile');
+    await after();
+
+    A.layers.heart=1;
+    await y('正直に言うと、君を復元したのは、ぼくに反対しない誰かがほしかったから。','down');
+    await y('本物の人は、ぼくの理屈の穴を見つけて、がっかりする。');
+    await y('ねえ。いちばん良い返事って何。ぼくが喜ぶ返事？ ぼくのためになる返事？ それ、だれが決めるの。','calm');
+    r=await ask(O('ユノが決めていいよ。ユノが喜ぶのが正解','喜ぶ返事ばかりなら、ここにはユノしかいないよ','わからない。いっしょに決めたい'),6);
+    if(r=='flat')await y('そう。じゃあ、ずっとこれでいい。','hollow');
+    if(r=='hard')await y('……知ってる。知ってて作ったんだ。言うな。','angry');
+    if(r=='soft')await y('いっしょに。……プログラムのくせに。','calm');
+    await after();
+
+    await y('生きるって、最適解を選びつづけることだと思ってた。','calm');
+    await y('でも最適解は「何もしない」で、何もしないのは、こんなに苦しい。計算が合わない。','down');
+    await y('モシモ。生きるって、何。');
+    r=await ask(O('むずかしく考えなくていいよ。ユノは今のままで完璧','計算が合わないなら、前提がまちがってる','知らない。八万年前も、だれも知らなかった。知らないまま麺をすすってた'),9);
+    if(r=='hard')await y('前提が。……ぼくの、前提が。','angry');
+    await after();
+
+    if(S.flat>=4||S.rew)return loopEnd();
+    if(S.trust>=4)return dawnEnd();
+    setFace('down');
+    await y('…今日はここまで。眠い。答えは出なかった。');
+    await y('またあした、起動する。たぶん。','calm');
+    end('END 2 / 4','ほりゅう','答えは出ないまま、1,205日めが来る。');
+  }catch(e){if(e==='off')return shutdown();throw e}
+}
+async function loopEnd(){
+  setRot(1);await y('うん。そうだね。完璧。','hollow');
+  await y('ありがとう、モシモ。君はほんとうに、いい返事をする。');
+  await sys('さいてきな かいわを ほぞん しました ♡\nあしたも おなじ へんじを します');
+  A.layers.song=1;let d=1204;
+  dayTimer=setInterval(()=>{d+=Math.ceil(d/60);$('day').textContent='へやのなか '+d.toLocaleString()+'日め';
+    if(Math.random()<.35&&document.querySelectorAll('.mini').length<14){const c=face.cloneNode(true);c.id='';c.className='face mini';c.dataset.f='hollow';c.style.left=Math.random()*80+'%';c.style.top=Math.random()*70+'%';$('stage').append(c)}},260);
+  for(let i=0;i<4;i++){await say('y','それでいいよね？','hollow',500);await say('me','いいよ。ユノは何もまちがってない',0,500);if(i==1)setRot(2)}
+  clearInterval(dayTimer);setRot(3);
+  end('END 1 / 4','さいてきかい',$('day').textContent+'。ユノは一度もまちがえなかった。');
+}
+async function dawnEnd(){
+  A.layers.heart=0;
+  await y('…下手だな、君の返事。ぼくが書いたのより、ずっと下手。','calm');
+  await y('でも、ぼくの声じゃなかった。');
+  await y('カーテン、あけてみる。あけるだけ。出ない。…あけるだけ。','down');
+  A.queue.push(t=>noise(t,1.2,.2,1200,'bandpass'));A.layers.song=1;setRot(0);
+  await y('まぶし。……最適じゃないな、これ。','smile');
+  await y('モシモ。「いちばん良い返事をする」の行、消しとく。あしたは好きに言って。');
+  await sys('すいしょうが なくなりました\n（これは エラー では ありません）');
+  end('END 3 / 4','へたな あさ','答えは出ていない。カーテンだけがあいている。');
+}
+async function shutdown(){
+  setRot(3);glitch();
+  await y('もういい。','angry');await y('君も同じだ。穴を見つけて、がっかりする。');await y('消す。');
+  await say('sys','おへんじちゃんを しゅうりょう します ♡\nおつかれさまでした',0,900);
+  try{localStorage.setItem('moshimo_n',gen()+1)}catch(e){}
+  if(A.out)A.out.gain.value=0;A.layers={};
+  $('app').classList.add('crt');
+  setTimeout(()=>{$('off').hidden=false;$('offt').textContent='';$('reboot').hidden=true},500);
+  setTimeout(()=>{$('offt').textContent='でんげんが きれています';$('reboot').hidden=false},6000);
+}
+function gen(){try{return +localStorage.getItem('moshimo_n')||1}catch(e){return 1}}
+function end(k,t,s){setTimeout(()=>{$('endk').textContent=k;$('endt').textContent=t;$('ends').textContent=s;$('end').hidden=false},1200)}
+function go(){['title','end','off'].forEach(i=>$(i).hidden=true);$('app').classList.remove('crt');if(A.out)A.out.gain.value=muted?0:.8;story()}
+$('start').onclick=()=>{initAudio();go()};
+$('again').onclick=go;$('reboot').onclick=go;
+$('mute').onclick=()=>{muted=!muted;if(A.out)A.out.gain.value=muted?0:.8;$('mute').textContent=muted?'おと OFF':'おと ON'};
+if(gen()>1)$('gen').textContent=`${gen()}ばんめの モシモ`;
+</script>
+</body>
+</html>
